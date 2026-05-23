@@ -53,12 +53,16 @@ export class ViewBackground {
         }
     }
 
-    Resize(w: number, h: number): void {
-        // [Lightweight] 배경 해상도를 1.0으로 고정하여 최적화.
-        const dpr = 1; // _DPR.value
+    Resize(w: number, h: number, zoom: number): void {
+        // [Optimize] 배경 해상도를 1.0으로 고정하여 최적화.
+        const dpr = 1;
         this.cav.width = w * dpr;
         this.cav.height = h * dpr;
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // this.ctx.translate(w/2, h/2);
+        // this.ctx.scale(zoom, zoom); 
+        // this.ctx.translate(-x, -y);
     }
 
     Update(x: number, y: number, zoom: number): void {
@@ -92,7 +96,7 @@ function UpdatePattern(x: number, y: number, w: number, h: number, zoom: number,
     matrix.e = 0; matrix.f = 0;
 
     // [Convert] 중앙 기준으로 맵 (x,y)좌표에 맞게 위치설정.
-    matrix.translateSelf(w / 2, h / 2);
+    matrix.translateSelf(w/2, h/2);
     matrix.scaleSelf(zoom, zoom);
     matrix.translateSelf(-x, -y);
 

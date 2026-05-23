@@ -6,11 +6,12 @@ import { ViewBackground } from './view.background'
 import { ViewBoard } from './view.board'
 import { ViewEffect } from './view.effect'
 import './view.css'
+import { Draw } from '@/manager/manager.render'
 
 
 export class View {
     panel: HTMLDivElement;
-    view = {
+    pos = {
         zoom: {
             size: 1,
             min : 0.5, 
@@ -23,27 +24,30 @@ export class View {
         space: {
             x: 0,
             y: 0,
-            // w: 0,
-            // h: 0,
-            z: 0,
+            w: 0,
+            h: 0,
         }
     };
     background  : ViewBackground;
     board       : ViewBoard;
     effect      : ViewEffect;
+    cav         : HTMLCanvasElement;
+    ctx         : CanvasRenderingContext2D;
     
     constructor(args: {parentNode: HTMLElement}) {
-        
         
         // [Cover] 배경 담을 div 생성
         this.panel = document.createElement('div');
         this.panel.id = 'view';
         args.parentNode.appendChild(this.panel);
+        this.cav = document.createElement('canvas');
+        this.ctx = this.cav.getContext('2d') as CanvasRenderingContext2D;
+        this.panel.appendChild(this.cav);
 
         // [Create] 배경 순차적 생성. (1. Background, 2. Board, 3. Effect)
         this.background = new ViewBackground({parentNode: this.panel});
         this.board      = new ViewBoard     ({parentNode: this.panel});
-        this.effect     = new ViewEffect    ({parentNode: this.panel});
+        this.effect     = new ViewEffect    ();
 
         // [Resize] 배경 생성직후, 캔버스 초기화 위해 호출.
         this.Resize();
@@ -51,56 +55,83 @@ export class View {
     
     // [Value] zoom
     get zoom() {
-        return this.view.zoom.size;
+        return this.pos.zoom.size;
     }
     set zoom(size) {
-        const zoom = this.view.zoom;
+        const zoom = this.pos.zoom;
         if(size >= zoom.min && size <= zoom.max) {
             zoom.size = size;
+
+            const width  = this.panel.offsetWidth;
+            const height = this.panel.offsetHeight;
+        
+            this.w = this.SpaceLine(width);
+            this.h = this.SpaceLine(height);
         }
     }
 
     // [Value] offset
     get offsetW() {
-        return this.view.offset.width;
+        return this.pos.offset.width;
     }
     set offsetW(offsetWidth: number) {
-        this.view.offset.width = offsetWidth;
+        this.pos.offset.width = offsetWidth;
     }
     get offsetH() {
-        return this.view.offset.height;
+        return this.pos.offset.height;
     }
     set offsetH(offsetHeight: number) {
-        this.view.offset.height = offsetHeight;
+        this.pos.offset.height = offsetHeight;
     }
 
     // [Value] space
     get x() {
-        return this.view.space.x;
+        return this.pos.space.x;
     }
     set x(size) {
         // [Validation] 비정상적인 숫자일 때 0으로 초기화 하여 화면이탈 방지
         // 예: NaN, Infinity, 부동소수점 이슈
-        this.view.space.x = (!Number.isFinite(size))? 0 : size;
+        this.pos.space.x = (!Number.isFinite(size))? 0 : size;
     }
     get y() {
-        return this.view.space.y;
+        return this.pos.space.y;
     }
     set y(size) {
         // [Validation] 비정상적인 숫자일 때 0으로 초기화 하여 화면이탈 방지
         // 예: NaN, Infinity, 부동소수점 이슈
-        this.view.space.y = (!Number.isFinite(size))? 0 : size;
+        this.pos.space.y = (!Number.isFinite(size))? 0 : size;
+    }
+    get w() {
+        return this.pos.space.w;
+    }
+    set w(size) {        
+        this.pos.space.w = (!Number.isFinite(size))? 0 : size;
+    }   
+    get h() {
+        return this.pos.space.h;
+    }
+    set h(size) {
+        this.pos.space.h = (!Number.isFinite(size))? 0 : size;
     }
 
     Resize() {
+        // [Optimize] offsetWidth 를 호출시, 크기 연산을 매번 하기 때문에,
+        // 최적화 위해서 Resize 호출시 값을 저장해서 사용하도록 함.
         const width  = this.panel.offsetWidth;
         const height = this.panel.offsetHeight;
-        this.offsetW = width;
+        
+        this.offsetW = width;   
         this.offsetH = height;
 
-        this.background.Resize(width, height);
+        this.w = this.SpaceLine(width);
+        this.h = this.SpaceLine(height);
+
+        const dpr = _DPR.value
+        this.cav.width = width * dpr;
+        this.cav.height = height * dpr;
+
+        this.background.Resize(width, height, this.zoom);
         this.board     .Resize(width, height);
-        this.effect    .Resize(width, height);
     }
 
     SpaceX(offsetX: number): number {
@@ -115,9 +146,20 @@ export class View {
         return Math.round(pixel/this.zoom);
     }
 
+    ClearRect() {
+        const dpr = _DPR.value;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+       
+        this.ctx.translate(this.w/2, this.h/2);
+        this.ctx.scale(this.zoom, this.zoom); 
+        this.ctx.translate(-this.x, -this.y);
+
+        this.ctx.clearRect(this.x-this.cav.width/2, this.y-this.cav.height/2, this.cav.width, this.cav.height);
+
+    }
+
     Draw() {
-        // !!!!!!! controller 에서 command 로 Move 보내는 형식으로 바꾼 이후에
-        // 여기서 직접 Update 호출부분 삭제필요.
+        this.ClearRect();
         
         // [Background]
         this.background.Update(this.x, this.y, this.zoom);
@@ -136,11 +178,17 @@ export class View {
         };
         const children = _SPCE.SelectArea(start.x, start.y, end.x, end.y);
         this.board.Update(this.x, this.y, this.zoom);
-        this.board.Draw(this.x, this.y, children);
+        this.board.Draw(this.ctx, this.x, this.y, children);
 
         // [Effect]
-        this.effect.Update(this.x, this.y, this.zoom);
-        this.effect.Draw(this.x, this.y);
+        this.effect.AddSquare(-40, -30, 100, 100, 'skyblue');
+        this.effect.Draw(this.ctx);
+
+
+        // test
+        this.ctx.fillStyle = 'rgba(255,0,150,0.3)';
+        this.ctx.fillRect(this.x-this.w/2, this.y-this.h/2, this.w/2, this.h/2);
+       
     }
 
 }

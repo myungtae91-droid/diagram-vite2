@@ -1,5 +1,5 @@
 
-import { _DPR } from '../main'
+import { _DPR, _SPCE } from '../main'
 import * as DiagramsType from '../diagrams/diagrams.type'
 
 export class ViewBoard {
@@ -44,7 +44,7 @@ export class ViewBoard {
         this.ctx.translate(-x, -y);
     }
 
-    Draw(x: number, y: number, list: DiagramsType.Instance[]) {
+    Draw(ctx: CanvasRenderingContext2D, x: number, y: number, list: DiagramsType.Instance[]) {
         const w = this.cav.width;
         const h = this.cav.height;
         
@@ -55,13 +55,13 @@ export class ViewBoard {
         }
 
         this.Pointer(0,0,'green');
-        this.Pointer(-w/2,-h/2,'orange');
-        this.Pointer(-w/4,-h/4,'pink');
-        this.Pointer(-w/4,0,'blue');
-        this.Pointer(-w,0,'silver');
+        // this.Pointer(-w/2,-h/2,'orange');
+        // this.Pointer(-w/4,-h/4,'pink');
+        // this.Pointer(-w/4,0,'blue');
+        // this.Pointer(-w,0,'silver');
 
-        this.Pointer(w,h,'skyblue');
-        this.Pointer(w,-h/2,'purple');
+        // this.Pointer(w,h,'skyblue');
+        // this.Pointer(w,-h/2,'purple');
     }
 
     Pointer(x: number, y: number, color: string) {
