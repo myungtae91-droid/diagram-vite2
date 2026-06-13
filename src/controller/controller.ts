@@ -1,8 +1,11 @@
 import { _MNGR } from '@/main'
 import { Engines } from '@/engines/engines'
 import * as ControllerType from './controller.type'
+import { ControllerKeyboard } from './controller.keyboard'
 import './controller.css'
 
+
+new ControllerKeyboard();
 
 export class Controller {
 

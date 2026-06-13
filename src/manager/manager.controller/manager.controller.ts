@@ -2,6 +2,9 @@ import { _DPR, _VIEW, _CTRL, _REMO, _LOOP, _SPCE, _MNGR } from '@/main'
 import * as DiagramsType from '@/diagrams/diagrams.type'
 import * as Diagrams from '@/diagrams/diagrams'
 
+import * as ManagerControllerPointer from './manager.controller.pointer'
+import * as ManagerControllerSquare from './manager.controller.square'
+
 export const down = {
     list: [] as DiagramsType.Instance[],
     view: {
@@ -23,13 +26,12 @@ export function Down() {
     const spaceY = _VIEW.SpaceY(_CTRL.down.offsetY);
     down.list = _SPCE.collision.Point(spaceX, spaceY);
 
-    console.log('여기2', down.list.length)
+    
     switch(_REMO.selected) {
         case 'pointer': {
             if(down.list.length > 0) {
                 const diagram = down.list[down.list.length-1];
                 diagram.zIndex = Date.now();
-                _MNGR.diagram.Update(diagram);
                
                 if (diagram instanceof Diagrams.Class.Line) {
                 }

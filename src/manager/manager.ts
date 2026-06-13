@@ -1,4 +1,4 @@
-import * as ManagerController   from './manager.controller'
+import * as ManagerController   from './manager.controller/manager.controller'
 import * as ManagerRemocon      from './manager.remocon'
 import * as ManagerRender       from './manager.render'
 import * as ManagerLoop         from './manager.loop'
